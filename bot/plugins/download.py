@@ -31,7 +31,28 @@ def _download(client, message):
       LOGGER.info(f'Copy:{user_id}: {link}')
       msg = GoogleDrive(user_id).clone(link)
       sent_message.edit(msg)
-    
+    else:
+      if '|' in link:
+        link, filename = link.split('|')
+        link = link.strip()
+        filename.strip()
+        dl_path = os.path.join(f'{DOWNLOAD_DIRECTORY}/{filename}')
+      else:
+        link = link.strip()
+        filename = os.path.basename(link)
+        dl_path = DOWNLOAD_DIRECTORY
+      LOGGER.info(f'Download:{user_id}: {link}')
+      sent_message.edit(Messages.DOWNLOADING.format(link))
+      result, file_path = download_file(link, dl_path)
+      if result == True:
+        sent_message.edit(Messages.DOWNLOADED_SUCCESSFULLY.format(os.path.basename(file_path), humanbytes(os.path.getsize(file_path))))
+        msg = GoogleDrive(user_id).upload_file(file_path)
+        sent_message.edit(msg)
+        LOGGER.info(f'Deleteing: {file_path}')
+        os.remove(file_path)
+      else:
+        sent_message.edit(Messages.DOWNLOAD_ERROR.format(file_path, link))
+        
     if 'facebook' in link:
       url = message.text
       try:
